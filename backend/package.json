@@ -1,0 +1,9 @@
+{
+  "name": "fitness-app-backend",
+  "version": "1.0.0",
+  "description": "Fitness tracking app API",
+  "main": "index.js",
+  "scripts": {
+    "start": "php artisan serve"
+  }
+}
