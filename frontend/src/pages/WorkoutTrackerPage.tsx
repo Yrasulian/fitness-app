@@ -4,7 +4,7 @@ import axios from 'axios';
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 interface Plan { id: number; name: string; }
-interface PlanExercise { id: number; exercise_name: string; muscle_group: string; target_sets: number; target_reps: string; target_weight: number|null; weight_unit: string; target_rir: number|null; }
+interface PlanExercise { id: number; exercise_name: string; muscle_group: string; target_sets: number; target_reps: string; target_weight: number|null; weight_unit: string; target_rir: number|null; notes?: string; }
 interface Workout { id: number; session_name: string; workout_date: string; completed: boolean; duration_minutes: number; energy_level: number; exerciseLogs: ExLog[]; }
 interface ExLog { id: number; exercise_name: string; set_number: number; reps: number; weight: number; weight_unit: string; rir: number; }
 
