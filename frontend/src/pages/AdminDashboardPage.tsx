@@ -8,6 +8,8 @@ const MUSCLES = ['Chest','Back','Shoulders','Biceps','Triceps','Legs','Glutes','
 
 interface AdminUser { id: number; name: string; email: string; is_admin: boolean; created_at: string; }
 interface CustomExercise { id: number; name: string; muscle_group: string; equipment: string; instructions: string; }
+interface PlanExercise { id: number; exercise_name: string; target_sets: number; target_reps: string; target_weight: number|null; weight_unit: string; target_rir: number|null; }
+interface TrainingPlan { id: number; name: string; template_type: string; duration_weeks: number; status: string; exercises: PlanExercise[]; }
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -18,6 +20,9 @@ export default function AdminDashboardPage() {
   const [exForm, setExForm] = useState({ name:'', muscle_group:'', equipment:'Barbell', instructions:'' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [selectedUser, setSelectedUser] = useState<AdminUser|null>(null);
+  const [userPlans, setUserPlans] = useState<TrainingPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
 
   useEffect(() => {
     if (!user?.is_admin) { navigate('/dashboard'); return; }
@@ -59,6 +64,16 @@ export default function AdminDashboardPage() {
     fetchExercises();
   };
 
+  const viewUserPlans = async (u: AdminUser) => {
+    setSelectedUser(u);
+    setPlansLoading(true);
+    try {
+      const r = await axios.get(`${API}/admin/users/${u.id}/training-plans`);
+      setUserPlans(r.data);
+    } catch { setUserPlans([]); }
+    finally { setPlansLoading(false); }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -86,6 +101,7 @@ export default function AdminDashboardPage() {
                 <th className="text-left px-4 py-3 text-gray-600">Registered</th>
                 <th className="text-left px-4 py-3 text-gray-600">Role</th>
                 <th className="px-4 py-3"></th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -106,6 +122,9 @@ export default function AdminDashboardPage() {
                         {u.is_admin ? 'Remove Admin' : 'Make Admin'}
                       </button>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => viewUserPlans(u)} className="text-green-600 hover:underline text-xs">Plans</button>
                   </td>
                 </tr>
               ))}
@@ -170,6 +189,64 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Training Plans Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center p-5 border-b">
+              <div>
+                <h2 className="text-xl font-bold">{selectedUser.name}</h2>
+                <p className="text-sm text-gray-500">{selectedUser.email}</p>
+              </div>
+              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div className="overflow-y-auto p-5 space-y-4">
+              {plansLoading && <p className="text-center text-gray-400">Loading...</p>}
+              {!plansLoading && userPlans.length === 0 && (
+                <p className="text-center text-gray-400 py-8">No training plans yet.</p>
+              )}
+              {userPlans.map(plan => (
+                <div key={plan.id} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
+                    <div>
+                      <span className="font-semibold">{plan.name}</span>
+                      <span className="text-gray-400 text-sm ml-2">{plan.template_type} &middot; {plan.duration_weeks} weeks</span>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${plan.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{plan.status}</span>
+                  </div>
+                  {plan.exercises.length === 0 ? (
+                    <p className="text-sm text-gray-400 px-4 py-2">No exercises</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-t border-b text-xs text-gray-500">
+                        <tr>
+                          <th className="text-left px-4 py-2">Exercise</th>
+                          <th className="text-left px-4 py-2">Sets</th>
+                          <th className="text-left px-4 py-2">Reps</th>
+                          <th className="text-left px-4 py-2">Weight</th>
+                          <th className="text-left px-4 py-2">RIR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {plan.exercises.map(ex => (
+                          <tr key={ex.id} className="border-b last:border-0">
+                            <td className="px-4 py-2 font-medium">{ex.exercise_name}</td>
+                            <td className="px-4 py-2 text-gray-600">{ex.target_sets}</td>
+                            <td className="px-4 py-2 text-gray-600">{ex.target_reps}</td>
+                            <td className="px-4 py-2 text-gray-600">{ex.target_weight ? `${ex.target_weight} ${ex.weight_unit}` : '-'}</td>
+                            <td className="px-4 py-2 text-gray-600">{ex.target_rir ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

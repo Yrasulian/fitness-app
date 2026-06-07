@@ -229,6 +229,20 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(\Illuminate\Support\Facades\DB::table('users')
             ->select('id','name','email','is_admin','created_at')->orderBy('id')->get());
     });
+    Route::get('/admin/users/{id}/training-plans', function (int $id) {
+        abort_if(!auth()->user()->is_admin, 403);
+        $plans = \Illuminate\Support\Facades\DB::table('training_plans')
+            ->where('user_id', $id)
+            ->orderBy('created_at','desc')
+            ->get();
+        foreach ($plans as $plan) {
+            $plan->exercises = \Illuminate\Support\Facades\DB::table('training_plan_exercises')
+                ->where('training_plan_id', $plan->id)
+                ->orderBy('order_index')
+                ->get();
+        }
+        return response()->json($plans);
+    });
     Route::put('/admin/users/{id}/toggle-admin', function (int $id) {
         abort_if(!auth()->user()->is_admin, 403);
         $user = \Illuminate\Support\Facades\DB::table('users')->find($id);
