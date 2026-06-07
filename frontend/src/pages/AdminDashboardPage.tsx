@@ -23,6 +23,10 @@ export default function AdminDashboardPage() {
   const [selectedUser, setSelectedUser] = useState<AdminUser|null>(null);
   const [userPlans, setUserPlans] = useState<TrainingPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
+  const [showNewPlanForm, setShowNewPlanForm] = useState(false);
+  const [newPlanForm, setNewPlanForm] = useState({ name:'', description:'', template_type:'Custom', duration_weeks:4 });
+  const [addExPlanId, setAddExPlanId] = useState<number|null>(null);
+  const [newExForm, setNewExForm] = useState({ exercise_name:'', muscle_group:'', target_sets:3, target_reps:'10', target_weight:'', weight_unit:'kg', target_rir:'', rest_seconds:'', notes:'' });
 
   useEffect(() => {
     if (!user?.is_admin) { navigate('/dashboard'); return; }
@@ -66,12 +70,43 @@ export default function AdminDashboardPage() {
 
   const viewUserPlans = async (u: AdminUser) => {
     setSelectedUser(u);
+    setShowNewPlanForm(false);
+    setAddExPlanId(null);
     setPlansLoading(true);
     try {
       const r = await axios.get(`${API}/admin/users/${u.id}/training-plans`);
       setUserPlans(r.data);
     } catch { setUserPlans([]); }
     finally { setPlansLoading(false); }
+  };
+
+  const createPlanForUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    const r = await axios.post(`${API}/admin/users/${selectedUser.id}/training-plans`, newPlanForm);
+    setUserPlans(prev => [r.data, ...prev]);
+    setShowNewPlanForm(false);
+    setNewPlanForm({ name:'', description:'', template_type:'Custom', duration_weeks:4 });
+  };
+
+  const addExerciseToPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addExPlanId) return;
+    const r = await axios.post(`${API}/admin/training-plans/${addExPlanId}/exercises`, newExForm);
+    setUserPlans(prev => prev.map(p => p.id === addExPlanId
+      ? { ...p, exercises: [...p.exercises, r.data] }
+      : p
+    ));
+    setAddExPlanId(null);
+    setNewExForm({ exercise_name:'', muscle_group:'', target_sets:3, target_reps:'10', target_weight:'', weight_unit:'kg', target_rir:'', rest_seconds:'', notes:'' });
+  };
+
+  const removeExerciseFromPlan = async (planId: number, exId: number) => {
+    await axios.delete(`${API}/admin/training-plans/${planId}/exercises/${exId}`);
+    setUserPlans(prev => prev.map(p => p.id === planId
+      ? { ...p, exercises: p.exercises.filter(ex => ex.id !== exId) }
+      : p
+    ));
   };
 
   return (
@@ -196,18 +231,52 @@ export default function AdminDashboardPage() {
       {/* Training Plans Modal */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+
+            {/* Header */}
             <div className="flex justify-between items-center p-5 border-b">
               <div>
                 <h2 className="text-xl font-bold">{selectedUser.name}</h2>
                 <p className="text-sm text-gray-500">{selectedUser.email}</p>
               </div>
-              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => { setShowNewPlanForm(!showNewPlanForm); setAddExPlanId(null); }}
+                  className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700">
+                  + New Plan
+                </button>
+                <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+              </div>
             </div>
+
+            {/* New Plan Form */}
+            {showNewPlanForm && (
+              <form onSubmit={createPlanForUser} className="border-b p-4 bg-blue-50 space-y-2">
+                <h3 className="font-semibold text-sm text-blue-800">Create Plan for {selectedUser.name}</h3>
+                <input placeholder="Plan name *" value={newPlanForm.name} onChange={e => setNewPlanForm({...newPlanForm, name:e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" required />
+                <input placeholder="Description" value={newPlanForm.description} onChange={e => setNewPlanForm({...newPlanForm, description:e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg text-sm" />
+                <div className="flex gap-2">
+                  <select value={newPlanForm.template_type} onChange={e => setNewPlanForm({...newPlanForm, template_type:e.target.value})}
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm">
+                    {['PPL','Upper/Lower','Full Body','Push/Pull/Legs','Custom'].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                  <input type="number" placeholder="Weeks" min={1} value={newPlanForm.duration_weeks}
+                    onChange={e => setNewPlanForm({...newPlanForm, duration_weeks:+e.target.value})}
+                    className="w-24 px-3 py-2 border rounded-lg text-sm" />
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">Create</button>
+                  <button type="button" onClick={() => setShowNewPlanForm(false)} className="bg-gray-200 px-4 py-1.5 rounded-lg text-sm">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            {/* Plans List */}
             <div className="overflow-y-auto p-5 space-y-4">
               {plansLoading && <p className="text-center text-gray-400">Loading...</p>}
               {!plansLoading && userPlans.length === 0 && (
-                <p className="text-center text-gray-400 py-8">No training plans yet.</p>
+                <p className="text-center text-gray-400 py-8">No training plans yet. Create one above!</p>
               )}
               {userPlans.map(plan => (
                 <div key={plan.id} className="border rounded-lg overflow-hidden">
@@ -216,10 +285,72 @@ export default function AdminDashboardPage() {
                       <span className="font-semibold">{plan.name}</span>
                       <span className="text-gray-400 text-sm ml-2">{plan.template_type} &middot; {plan.duration_weeks} weeks</span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${plan.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{plan.status}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${plan.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{plan.status}</span>
+                      <button onClick={() => setAddExPlanId(addExPlanId === plan.id ? null : plan.id)}
+                        className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
+                        + Exercise
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Add Exercise Form */}
+                  {addExPlanId === plan.id && (
+                    <form onSubmit={addExerciseToPlan} className="bg-blue-50 border-b p-3 space-y-2">
+                      <input placeholder="Exercise name *" value={newExForm.exercise_name}
+                        onChange={e => setNewExForm({...newExForm, exercise_name:e.target.value})}
+                        className="w-full px-3 py-1.5 border rounded text-sm" required />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-xs text-gray-500">Muscle</label>
+                          <select value={newExForm.muscle_group} onChange={e => setNewExForm({...newExForm, muscle_group:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm">
+                            <option value="">-</option>
+                            {MUSCLES.map(m => <option key={m}>{m}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Sets</label>
+                          <input type="number" min={1} value={newExForm.target_sets}
+                            onChange={e => setNewExForm({...newExForm, target_sets:+e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Reps</label>
+                          <input placeholder="8-12" value={newExForm.target_reps}
+                            onChange={e => setNewExForm({...newExForm, target_reps:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Weight</label>
+                          <input type="number" step="0.5" placeholder="opt." value={newExForm.target_weight}
+                            onChange={e => setNewExForm({...newExForm, target_weight:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Unit</label>
+                          <select value={newExForm.weight_unit} onChange={e => setNewExForm({...newExForm, weight_unit:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm">
+                            <option>kg</option><option>lbs</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">RIR</label>
+                          <input type="number" min={0} max={5} placeholder="0-5" value={newExForm.target_rir}
+                            onChange={e => setNewExForm({...newExForm, target_rir:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Add</button>
+                        <button type="button" onClick={() => setAddExPlanId(null)} className="bg-gray-200 px-3 py-1 rounded text-sm">Cancel</button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Exercises Table */}
                   {plan.exercises.length === 0 ? (
-                    <p className="text-sm text-gray-400 px-4 py-2">No exercises</p>
+                    <p className="text-sm text-gray-400 px-4 py-2 italic">No exercises yet</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-t border-b text-xs text-gray-500">
@@ -229,16 +360,21 @@ export default function AdminDashboardPage() {
                           <th className="text-left px-4 py-2">Reps</th>
                           <th className="text-left px-4 py-2">Weight</th>
                           <th className="text-left px-4 py-2">RIR</th>
+                          <th className="px-4 py-2"></th>
                         </tr>
                       </thead>
                       <tbody>
                         {plan.exercises.map(ex => (
-                          <tr key={ex.id} className="border-b last:border-0">
+                          <tr key={ex.id} className="border-b last:border-0 hover:bg-gray-50">
                             <td className="px-4 py-2 font-medium">{ex.exercise_name}</td>
                             <td className="px-4 py-2 text-gray-600">{ex.target_sets}</td>
                             <td className="px-4 py-2 text-gray-600">{ex.target_reps}</td>
                             <td className="px-4 py-2 text-gray-600">{ex.target_weight ? `${ex.target_weight} ${ex.weight_unit}` : '-'}</td>
                             <td className="px-4 py-2 text-gray-600">{ex.target_rir ?? '-'}</td>
+                            <td className="px-4 py-2">
+                              <button onClick={() => removeExerciseFromPlan(plan.id, ex.id)}
+                                className="text-red-400 hover:text-red-600 text-xs">&times;</button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

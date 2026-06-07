@@ -243,6 +243,55 @@ Route::middleware('auth:sanctum')->group(function () {
         }
         return response()->json($plans);
     });
+    Route::post('/admin/users/{id}/training-plans', function (\Illuminate\Http\Request $req, int $id) {
+        abort_if(!auth()->user()->is_admin, 403);
+        abort_if(!\Illuminate\Support\Facades\DB::table('users')->find($id), 404);
+        $v = $req->validate([
+            'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'template_type'  => 'nullable|string|max:50',
+            'duration_weeks' => 'nullable|integer|min:1',
+        ]);
+        $planId = \Illuminate\Support\Facades\DB::table('training_plans')->insertGetId(array_merge($v, [
+            'user_id'    => $id,
+            'status'     => 'Active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
+        $plan = \Illuminate\Support\Facades\DB::table('training_plans')->find($planId);
+        $plan->exercises = [];
+        return response()->json($plan, 201);
+    });
+    Route::post('/admin/training-plans/{planId}/exercises', function (\Illuminate\Http\Request $req, int $planId) {
+        abort_if(!auth()->user()->is_admin, 403);
+        $plan = \Illuminate\Support\Facades\DB::table('training_plans')->find($planId);
+        abort_if(!$plan, 404);
+        $v = $req->validate([
+            'exercise_name'  => 'required|string|max:255',
+            'muscle_group'   => 'nullable|string',
+            'target_sets'    => 'nullable|integer|min:1',
+            'target_reps'    => 'nullable|string|max:20',
+            'target_weight'  => 'nullable|numeric',
+            'weight_unit'    => 'nullable|string|max:10',
+            'target_rir'     => 'nullable|integer|min:0|max:5',
+            'rest_seconds'   => 'nullable|integer',
+            'notes'          => 'nullable|string',
+        ]);
+        $count = \Illuminate\Support\Facades\DB::table('training_plan_exercises')->where('training_plan_id',$planId)->count();
+        $id = \Illuminate\Support\Facades\DB::table('training_plan_exercises')->insertGetId(array_merge($v, [
+            'training_plan_id' => $planId,
+            'order_index'      => $count + 1,
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]));
+        return response()->json(\Illuminate\Support\Facades\DB::table('training_plan_exercises')->find($id), 201);
+    });
+    Route::delete('/admin/training-plans/{planId}/exercises/{exId}', function (int $planId, int $exId) {
+        abort_if(!auth()->user()->is_admin, 403);
+        \Illuminate\Support\Facades\DB::table('training_plan_exercises')
+            ->where('training_plan_id', $planId)->where('id', $exId)->delete();
+        return response()->json(['message' => 'Deleted']);
+    });
     Route::put('/admin/users/{id}/toggle-admin', function (int $id) {
         abort_if(!auth()->user()->is_admin, 403);
         $user = \Illuminate\Support\Facades\DB::table('users')->find($id);
