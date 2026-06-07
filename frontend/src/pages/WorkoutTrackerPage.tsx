@@ -84,7 +84,7 @@ export default function WorkoutTrackerPage() {
               <div>
                 <label className="text-sm text-gray-500">Training Plan (optional)</label>
                 <select value={selectedPlanId} onChange={e => setSelectedPlanId(e.target.value)} className="w-full px-3 py-2 border rounded-lg mt-1">
-                  <option value="">â€” Free workout â€”</option>
+                  <option value="">-- Free workout --</option>
                   {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
@@ -103,7 +103,7 @@ export default function WorkoutTrackerPage() {
                       <button key={ex.id} onClick={() => selectPlanEx(ex)}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeExercise?.id===ex.id?'bg-blue-600 text-white':'hover:bg-gray-50 border'}`}>
                         <p className="font-medium">{ex.exercise_name}</p>
-                        <p className={`text-xs ${activeExercise?.id===ex.id?'text-blue-100':'text-gray-400'}`}>{ex.target_sets}Ã—{ex.target_reps} {ex.target_weight ? `@ ${ex.target_weight}${ex.weight_unit}` : ''} {ex.target_rir!==null?`RIR${ex.target_rir}`:''}</p>
+                        <p className={`text-xs ${activeExercise?.id===ex.id?'text-blue-100':'text-gray-400'}`}>{ex.target_sets}&times;{ex.target_reps} {ex.target_weight ? `@ ${ex.target_weight}${ex.weight_unit}` : ''} {ex.target_rir!==null?`RIR${ex.target_rir}`:''}</p>
                       </button>
                     ))}
                   </div>
@@ -121,7 +121,7 @@ export default function WorkoutTrackerPage() {
                 </div>
 
                 <form onSubmit={logSet} className="bg-white rounded-lg shadow p-5">
-                  <h3 className="font-semibold mb-3">Log Set {activeExercise && <span className="text-blue-600">â€” {activeExercise.exercise_name}</span>}</h3>
+                  <h3 className="font-semibold mb-3">Log Set {activeExercise && <span className="text-blue-600">&mdash; {activeExercise.exercise_name}</span>}</h3>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <input placeholder="Exercise name" value={exForm.exercise_name} onChange={e => setExForm({...exForm, exercise_name:e.target.value})}
                       className="col-span-2 px-3 py-2 border rounded-lg" required />
@@ -144,7 +144,7 @@ export default function WorkoutTrackerPage() {
                       <tbody>{activeWorkout.exerciseLogs.map(l => (
                         <tr key={l.id} className="border-b last:border-0">
                           <td className="py-2">{l.exercise_name}</td><td>{l.set_number}</td>
-                          <td>{l.reps}</td><td>{l.weight} {l.weight_unit}</td><td>{l.rir ?? 'â€”'}</td>
+                          <td>{l.reps}</td><td>{l.weight} {l.weight_unit}</td><td>{l.rir ?? '-'}</td>
                         </tr>
                       ))}</tbody>
                     </table>
@@ -160,7 +160,7 @@ export default function WorkoutTrackerPage() {
                     </select>
                     <textarea placeholder="Notes" value={endForm.notes} onChange={e => setEndForm({...endForm, notes:e.target.value})} className="col-span-2 px-3 py-2 border rounded-lg" rows={2} />
                   </div>
-                  <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">âœ“ Finish Workout</button>
+                  <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">&#10003; Finish Workout</button>
                 </form>
               </div>
             </div>
@@ -175,11 +175,11 @@ export default function WorkoutTrackerPage() {
               <div key={w.id} className="bg-white rounded-lg shadow p-5 flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold">{w.session_name}</h3>
-                  <p className="text-sm text-gray-500">{w.workout_date} Â· {w.exerciseLogs?.length ?? 0} sets</p>
+                  <p className="text-sm text-gray-500">{w.workout_date} &middot; {w.exerciseLogs?.length ?? 0} sets</p>
                 </div>
                 <div className="text-sm text-gray-500 text-right">
-                  {w.duration_minutes && <p>â± {w.duration_minutes} min</p>}
-                  {w.energy_level && <p>âš¡ {w.energy_level}/10</p>}
+                  {w.duration_minutes && <p>{w.duration_minutes} min</p>}
+                  {w.energy_level && <p>Energy: {w.energy_level}/10</p>}
                 </div>
               </div>
             ))}
