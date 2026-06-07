@@ -104,6 +104,7 @@ export default function WorkoutTrackerPage() {
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeExercise?.id===ex.id?'bg-blue-600 text-white':'hover:bg-gray-50 border'}`}>
                         <p className="font-medium">{ex.exercise_name}</p>
                         <p className={`text-xs ${activeExercise?.id===ex.id?'text-blue-100':'text-gray-400'}`}>{ex.target_sets}&times;{ex.target_reps} {ex.target_weight ? `@ ${ex.target_weight}${ex.weight_unit}` : ''} {ex.target_rir!==null?`RIR${ex.target_rir}`:''}</p>
+                        {ex.notes && <p className={`text-xs mt-0.5 ${activeExercise?.id===ex.id?'text-blue-200':'text-yellow-600'}`}>{ex.notes}</p>}
                       </button>
                     ))}
                   </div>

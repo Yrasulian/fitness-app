@@ -210,6 +210,7 @@ export default function TrainingPlansPage() {
                     <div>
                       <p className="font-semibold">{ex.exercise_name}</p>
                       <p className="text-sm text-gray-500">{ex.muscle_group}</p>
+                      {ex.notes && <p className="text-xs text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded mt-1">{ex.notes}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">

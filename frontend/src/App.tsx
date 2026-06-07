@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProgressPage from './pages/ProgressPage';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -32,6 +33,7 @@ function AppContent() {
         <Route path="/training-plans" element={<ProtectedRoute><TrainingPlansPage /></ProtectedRoute>} />
         <Route path="/workout-tracker" element={<ProtectedRoute><WorkoutTrackerPage /></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
+        <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
