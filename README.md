@@ -76,16 +76,9 @@ npm install
 npm start
 ```
 
-## Database Credentials (Your Setup)
+## Database Configuration
 
-```
-Host: l9du.your-database.de
-User: wlatie_0
-Password: c4,SPY6ox:zs
-Database: wlatie_db0
-Port: 3306
-Subdomain: myfitness.deinedomain.com
-```
+Configure your database credentials in `backend/.env` (see `.env.example`).
 
 ## API Endpoints
 
@@ -133,13 +126,12 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete step-by-step deployment guide.
 
 ### Backend (.env)
 ```
-APP_URL=https://myfitness.deinedomain.com
-DB_HOST=l9du.your-database.de
-DB_DATABASE=wlatie_db0
-DB_USERNAME=wlatie_0
-DB_PASSWORD=c4,SPY6ox:zs
-JWT_SECRET=your-secret-key
-CORS_ALLOWED_ORIGINS=https://myfitness.deinedomain.com
+APP_URL=https://api.yourdomain.com
+DB_HOST=your-db-host
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+CORS_ALLOWED_ORIGINS=https://myfitness.yourdomain.com
 ```
 
 ### Frontend (.env)

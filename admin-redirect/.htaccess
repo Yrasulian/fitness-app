@@ -1,0 +1,2 @@
+RewriteEngine On
+RewriteRule ^(.*)$ https://myfitness.wlati-mn.com/admin [R=301,L]

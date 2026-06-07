@@ -1,4 +1,195 @@
-# MyFitness - Complete Deployment Guide
+# MyFitness – Deployment Guide
+# Domain: wlati-mn.com
+
+## Architektur
+| URL | Inhalt |
+|-----|--------|
+| `https://myfitness.wlati-mn.com` | React Frontend |
+| `https://api.wlati-mn.com` | Laravel Backend (API) |
+| `https://admin.wlati-mn.com` | Redirect → myfitness.wlati-mn.com/admin |
+
+---
+
+## Schritt 1 – Subdomains in cPanel erstellen
+
+Gehe in cPanel → **Domains** → **Subdomains** und erstelle:
+
+| Subdomain | Document Root |
+|-----------|--------------|
+| `myfitness.wlati-mn.com` | `/public_html/myfitness` |
+| `api.wlati-mn.com` | `/public_html/api/public` |
+| `admin.wlati-mn.com` | `/public_html/admin-redirect` |
+
+---
+
+## Schritt 2 – Backend (Laravel) hochladen
+
+### 2a. Backend-Ordner vorbereiten (lokal)
+```powershell
+cd D:\Personal\my-apps\fitness-backend
+
+# Dependencies installieren (ohne Dev-Pakete)
+composer install --no-dev --optimize-autoloader
+
+# .env.production aktivieren
+Copy-Item .env.production .env
+
+# App-Key neu generieren (WICHTIG nach Kopie!)
+php artisan key:generate
+
+# Config/Route cache erstellen
+php artisan config:cache
+php artisan route:cache
+```
+
+### 2b. Folgende Dateien/Ordner via FTP hochladen nach `/public_html/api/`:
+```
+app/
+bootstrap/
+config/
+database/
+public/          ← nur dieser Ordner ist Document Root
+resources/
+routes/
+storage/
+vendor/
+.env             ← die .env.production (umbenannt)
+artisan
+composer.json
+```
+**NICHT hochladen:** `.git/`, `node_modules/`, `tests/`
+
+### 2c. Berechtigungen setzen
+
+**Option A – via SSH/Terminal in cPanel:**
+```bash
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+```
+
+**Option B – PHP-Skript (falls kein SSH):**  
+Lade `fixperms.php` nach `/public_html/api/public/` hoch (Document Root!) und rufe sie einmal im Browser auf:
+```php
+<?php
+function chmodR($path, $mode) {
+    if (!is_dir($path)) return;
+    $dir = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
+    foreach (new RecursiveIteratorIterator($dir, RecursiveIteratorIterator::SELF_FIRST) as $file) {
+        chmod($file->getPathname(), $mode);
+    }
+    chmod($path, $mode);
+}
+chmodR(__DIR__.'/../storage', 0775);
+chmodR(__DIR__.'/../bootstrap/cache', 0775);
+echo '<b>Done!</b> Permissions gesetzt!';
+echo '<br><b style="color:red">WICHTIG: Diese Datei jetzt wieder löschen!</b>';
+```
+URL: `https://api.wlati-mn.com/fixperms.php`  
+Danach die `fixperms.php` wieder löschen!
+
+### 2d. Datenbank-Migration (ohne SSH)
+
+Lade `migrate_run.php` nach `/public_html/api/public/` hoch (Document Root!) und rufe sie im Browser auf:
+
+```php
+<?php
+define('LARAVEL_START', microtime(true));
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+echo '<pre>';
+$kernel->call('migrate', ['--force' => true]);
+echo '</pre>';
+echo '<b>Migration abgeschlossen!</b><br>';
+echo '<b style="color:red">WICHTIG: Diese Datei jetzt wieder löschen!</b>';
+```
+
+URL: `https://api.wlati-mn.com/migrate_run.php`  
+Danach `migrate_run.php` sofort wieder löschen!
+
+---
+  
+## Schritt 3 – Frontend (React) builden und hochladen
+
+### 3a. Frontend builden (lokal)
+```powershell
+cd D:\Personal\my-apps\fitness\fitness-app\frontend
+
+# Produktions-Build erstellen (nutzt .env.production automatisch)
+npm run build
+```
+
+### 3b. Den Inhalt von `build/` hochladen nach `/public_html/myfitness/`
+Alle Dateien aus dem `build/`-Ordner (inkl. `.htaccess`):
+```
+build/
+  static/
+  index.html
+  .htaccess       ← wichtig für React Router!
+  ...
+```
+
+---
+
+## Schritt 4 – Admin-Subdomain einrichten
+
+Lade die Datei `admin-redirect/.htaccess` hoch nach `/public_html/admin-redirect/`:
+
+```
+RewriteEngine On
+RewriteRule ^(.*)$ https://myfitness.wlati-mn.com/admin [R=301,L]
+```
+
+---
+
+## Schritt 5 – SSL-Zertifikat (HTTPS)
+
+In cPanel → **SSL/TLS** → **Let's Encrypt**:
+- Zertifikat für `myfitness.wlati-mn.com` ausstellen
+- Zertifikat für `api.wlati-mn.com` ausstellen  
+- Zertifikat für `admin.wlati-mn.com` ausstellen
+
+---
+
+## Schritt 6 – E-Mail für Passwort-Reset konfigurieren
+
+In `/public_html/api/.env` die MAIL-Werte mit deinen E-Mail-Zugangsdaten von wlati-mn.com füllen:
+```
+MAIL_HOST=mail.wlati-mn.com
+MAIL_USERNAME=noreply@wlati-mn.com
+MAIL_PASSWORD=DEIN_PASSWORT
+```
+
+---
+
+## Produktions-Checkliste
+
+- [ ] Subdomains erstellt
+- [ ] Backend hochgeladen + `.env` konfiguriert
+- [ ] `APP_DEBUG=false` in `.env` gesetzt
+- [ ] Frontend gebaut und hochgeladen
+- [ ] `.htaccess` in myfitness-Ordner vorhanden
+- [ ] Admin-Redirect hochgeladen
+- [ ] SSL-Zertifikate aktiv (HTTPS)
+- [ ] E-Mail für Passwort-Reset konfiguriert
+- [ ] Ersten Admin-User per SQL oder Tinker setzen:
+  ```sql
+  UPDATE users SET is_admin=1 WHERE email='deine@email.de' LIMIT 1;
+  ```
+
+---
+
+## Lokale Entwicklung
+
+```powershell
+# Backend starten
+cd D:\Personal\my-apps\fitness-backend
+php artisan serve   # → http://localhost:8000
+
+# Frontend starten
+cd D:\Personal\my-apps\fitness\fitness-app\frontend
+npm start           # → http://localhost:3001
+```
 
 ## Prerequisites
 
@@ -11,13 +202,7 @@
 
 ## Database Credentials
 
-```
-Host: l9du.your-database.de
-Database: wlatie_db0
-User: wlatie_0
-Password: c4,SPY6ox:zs
-Port: 3306
-```
+Siehe `.env` auf dem Server. Credentials nicht in Git einchecken!
 
 ## Step 1: Setup Subdomain in cPanel
 
@@ -79,20 +264,16 @@ APP_NAME=FitnessApp
 APP_ENV=production
 APP_KEY=base64:YOUR_KEY_HERE
 APP_DEBUG=false
-APP_URL=https://myfitness.deinedomain.com
+APP_URL=https://api.yourdomain.com
 
 DB_CONNECTION=mysql
-DB_HOST=l9du.your-database.de
+DB_HOST=your-db-host
 DB_PORT=3306
-DB_DATABASE=wlatie_db0
-DB_USERNAME=wlatie_0
-DB_PASSWORD=c4,SPY6ox:zs
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
 
-JWT_SECRET=your-secret-key-here-32-chars-min
-JWT_ALGORITHM=HS256
-JWT_TTL=60
-
-CORS_ALLOWED_ORIGINS=https://myfitness.deinedomain.com
+CORS_ALLOWED_ORIGINS=https://myfitness.yourdomain.com
 ```
 
 4. Save file

@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 class AuthController extends Controller
 {
@@ -36,7 +33,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'User created successfully',
             'user' => $user,
-            'token' => $this->generateToken($user),
+            'token' => $user->createToken('auth_token')->plainTextToken,
         ], 201);
     }
 
@@ -58,12 +55,13 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login successful',
             'user' => $user,
-            'token' => $this->generateToken($user),
+            'token' => $user->createToken('auth_token')->plainTextToken,
         ], 200);
     }
 
     public function logout(Request $request)
     {
+        $request->user()->currentAccessToken()->delete();
         return response()->json([
             'message' => 'Logout successful',
         ], 200);
@@ -73,17 +71,5 @@ class AuthController extends Controller
     {
         $user = auth()->user();
         return response()->json($user);
-    }
-
-    protected function generateToken($user)
-    {
-        $payload = [
-            'iss' => config('app.url'),
-            'sub' => $user->id,
-            'iat' => time(),
-            'exp' => time() + (config('jwt.ttl') * 60),
-        ];
-
-        return JWT::encode($payload, config('jwt.secret'), config('jwt.algorithm'));
     }
 }

@@ -54,7 +54,7 @@ class NutritionController extends Controller
 
     public function deleteMeal(NutritionLog $log)
     {
-        $this->authorize('delete', $log);
+        abort_if($log->user_id !== auth()->id(), 403);
         $log->delete();
 
         return response()->json(['message' => 'Meal deleted']);

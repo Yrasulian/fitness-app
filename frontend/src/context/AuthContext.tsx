@@ -9,6 +9,7 @@ interface User {
   gender?: string;
   goal?: string;
   experience_level?: string;
+  is_admin?: boolean;
 }
 
 interface AuthContextType {
@@ -48,18 +49,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
       const { token: newToken, user: userData } = response.data;
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem('token', newToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    } catch (error) {
-      throw new Error('Login failed');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.response?.data?.error || 'Login failed';
+      throw new Error(msg);
     }
   };
 
@@ -72,8 +71,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(true);
       localStorage.setItem('token', newToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    } catch (error) {
-      throw new Error('Registration failed');
+    } catch (error: any) {
+      // Laravel validation errors are in error.response.data.errors
+      if (error?.response?.data?.errors) {
+        const firstError = Object.values(error.response.data.errors as Record<string, string[]>)[0];
+        throw new Error(Array.isArray(firstError) ? firstError[0] : String(firstError));
+      }
+      const msg = error?.response?.data?.message || error?.response?.data?.error || 'Registration failed';
+      throw new Error(msg);
     }
   };
 

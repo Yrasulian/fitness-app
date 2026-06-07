@@ -38,6 +38,11 @@ export default function Navbar() {
             <Link to="/profile" className="hover:text-blue-200">
               {user?.name}
             </Link>
+            {user?.is_admin && (
+              <Link to="/admin" className="bg-red-700 px-3 py-1 rounded text-sm font-medium hover:bg-red-800">
+                Admin
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="bg-red-600 px-4 py-2 rounded hover:bg-red-700"

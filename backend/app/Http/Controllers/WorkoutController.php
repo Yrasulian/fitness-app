@@ -27,7 +27,7 @@ class WorkoutController extends Controller
 
     public function logExercise(Request $request, WorkoutSession $workout)
     {
-        $this->authorize('update', $workout);
+        abort_if($workout->user_id !== auth()->id(), 403);
 
         $validated = $request->validate([
             'exercise_name' => 'required|string',
@@ -50,7 +50,7 @@ class WorkoutController extends Controller
 
     public function endWorkout(Request $request, WorkoutSession $workout)
     {
-        $this->authorize('update', $workout);
+        abort_if($workout->user_id !== auth()->id(), 403);
 
         $validated = $request->validate([
             'duration_minutes' => 'required|integer',

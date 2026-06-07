@@ -2,10 +2,18 @@
 backend/vendor/
 backend/.env
 backend/.env.local
+backend/.env.production
 backend/storage/logs/
 backend/bootstrap/cache/
 backend/.vscode/
 backend/node_modules/
+backend/check.php
+backend/debug.php
+backend/clear_cache.php
+backend/migrate_run.php
+backend/fixperms.php
+backend/root.htaccess
+backend/public/debug.php
 
 # Frontend
 frontend/node_modules/
