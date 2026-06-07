@@ -20,6 +20,7 @@ export default function AdminDashboardPage() {
   const [exForm, setExForm] = useState({ name:'', muscle_group:'', equipment:'Barbell', instructions:'' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [editEx, setEditEx] = useState<CustomExercise|null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser|null>(null);
   const [userPlans, setUserPlans] = useState<TrainingPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
@@ -65,6 +66,14 @@ export default function AdminDashboardPage() {
   const deleteExercise = async (id: number) => {
     if (!window.confirm('Delete this exercise?')) return;
     await axios.delete(`${API}/admin/exercises/${id}`);
+    fetchExercises();
+  };
+
+  const saveExercise = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEx) return;
+    await axios.put(`${API}/admin/exercises/${editEx.id}`, editEx);
+    setEditEx(null);
     fetchExercises();
   };
 
@@ -213,13 +222,39 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {exercises.map(ex => (
-                  <div key={ex.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{ex.name}</p>
-                      <p className="text-sm text-gray-500">{ex.muscle_group} · {ex.equipment}</p>
-                      {ex.instructions && <p className="text-xs text-gray-400 mt-1">{ex.instructions}</p>}
-                    </div>
-                    <button onClick={() => deleteExercise(ex.id)} className="text-red-400 hover:text-red-600 ml-4">✕</button>
+                  <div key={ex.id} className="bg-white rounded-lg shadow p-4">
+                    {editEx?.id === ex.id ? (
+                      <form onSubmit={saveExercise} className="space-y-2">
+                        <input value={editEx.name} onChange={e => setEditEx({...editEx, name:e.target.value})}
+                          className="w-full px-3 py-1.5 border rounded text-sm" required />
+                        <div className="grid grid-cols-2 gap-2">
+                          <select value={editEx.muscle_group} onChange={e => setEditEx({...editEx, muscle_group:e.target.value})}
+                            className="px-3 py-1.5 border rounded text-sm">
+                            {MUSCLES.map(m => <option key={m}>{m}</option>)}
+                          </select>
+                          <input value={editEx.equipment} onChange={e => setEditEx({...editEx, equipment:e.target.value})}
+                            placeholder="Equipment" className="px-3 py-1.5 border rounded text-sm" />
+                        </div>
+                        <textarea value={editEx.instructions} onChange={e => setEditEx({...editEx, instructions:e.target.value})}
+                          placeholder="Instructions" className="w-full px-3 py-1.5 border rounded text-sm" rows={2} />
+                        <div className="flex gap-2">
+                          <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Save</button>
+                          <button type="button" onClick={() => setEditEx(null)} className="bg-gray-200 px-3 py-1 rounded text-sm">Cancel</button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold">{ex.name}</p>
+                          <p className="text-sm text-gray-500">{ex.muscle_group} &middot; {ex.equipment}</p>
+                          {ex.instructions && <p className="text-xs text-gray-400 mt-1">{ex.instructions}</p>}
+                        </div>
+                        <div className="flex gap-3 ml-4">
+                          <button onClick={() => setEditEx({...ex})} className="text-blue-500 hover:text-blue-700 text-sm">Edit</button>
+                          <button onClick={() => deleteExercise(ex.id)} className="text-red-400 hover:text-red-600 text-sm">&times;</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

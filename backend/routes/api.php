@@ -314,6 +314,18 @@ Route::middleware('auth:sanctum')->group(function () {
         $id = \Illuminate\Support\Facades\DB::table('custom_exercises')->insertGetId(array_merge($v,['created_at'=>now(),'updated_at'=>now()]));
         return response()->json(\Illuminate\Support\Facades\DB::table('custom_exercises')->find($id), 201);
     });
+    Route::put('/admin/exercises/{id}', function (\Illuminate\Http\Request $req, int $id) {
+        abort_if(!auth()->user()->is_admin, 403);
+        abort_if(!\Illuminate\Support\Facades\DB::table('custom_exercises')->find($id), 404);
+        $v = $req->validate([
+            'name'         => 'required|string|max:255',
+            'muscle_group' => 'required|string',
+            'equipment'    => 'nullable|string',
+            'instructions' => 'nullable|string',
+        ]);
+        \Illuminate\Support\Facades\DB::table('custom_exercises')->where('id',$id)->update(array_merge($v,['updated_at'=>now()]));
+        return response()->json(\Illuminate\Support\Facades\DB::table('custom_exercises')->find($id));
+    });
     Route::delete('/admin/exercises/{id}', function (int $id) {
         abort_if(!auth()->user()->is_admin, 403);
         \Illuminate\Support\Facades\DB::table('custom_exercises')->where('id',$id)->delete();
