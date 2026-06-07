@@ -125,9 +125,9 @@ export default function TrainingPlansPage() {
                     <span className={`text-xs px-2 py-1 rounded-full ${plan.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{plan.status}</span>
                   </div>
                   {plan.description && <p className="text-gray-500 text-sm mb-2">{plan.description}</p>}
-                  <p className="text-sm text-gray-400">ðŸ“‹ {plan.template_type} Â· â± {plan.duration_weeks} weeks</p>
+                  <p className="text-sm text-gray-400">{plan.template_type} &middot; {plan.duration_weeks} weeks</p>
                   <div className="flex justify-between items-center mt-3">
-                    <span className="text-blue-600 text-sm font-medium">â†’ Open Plan</span>
+                    <span className="text-blue-600 text-sm font-medium">Open Plan &rarr;</span>
                     <button onClick={e => { e.stopPropagation(); deletePlan(plan.id); }} className="text-red-400 text-sm hover:text-red-600">Delete</button>
                   </div>
                 </div>
@@ -138,10 +138,10 @@ export default function TrainingPlansPage() {
       ) : (
         <>
           <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => setSelectedPlan(null)} className="text-gray-500 hover:text-gray-700">â† Back</button>
+            <button onClick={() => setSelectedPlan(null)} className="text-gray-500 hover:text-gray-700">&larr; Back</button>
             <h1 className="text-2xl font-bold">{selectedPlan.name}</h1>
             <span className="text-gray-400">|</span>
-            <span className="text-gray-500 text-sm">{selectedPlan.template_type} Â· {selectedPlan.duration_weeks} weeks</span>
+            <span className="text-gray-500 text-sm">{selectedPlan.template_type} &middot; {selectedPlan.duration_weeks} weeks</span>
           </div>
 
           <div className="flex justify-between items-center mb-4">
@@ -168,7 +168,7 @@ export default function TrainingPlansPage() {
                     <button key={i} type="button" onClick={() => pickExercise(ex)}
                       className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-0 flex justify-between">
                       <span className="font-medium">{ex.name}</span>
-                      <span className="text-gray-400 text-sm">{ex.muscle_group} Â· {ex.equipment}</span>
+                      <span className="text-gray-400 text-sm">{ex.muscle_group} &middot; {ex.equipment}</span>
                     </button>
                   ))}
                 </div>
@@ -213,11 +213,11 @@ export default function TrainingPlansPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span className="bg-blue-50 px-2 py-1 rounded">{ex.target_sets} Ã— {ex.target_reps}</span>
-                    {ex.target_weight && <span>{ex.target_weight}{ex.weight_unit}</span>}
+                    <span className="bg-blue-50 px-2 py-1 rounded">{ex.target_sets} &times; {ex.target_reps}</span>
+                    {ex.target_weight && <span>{ex.target_weight} {ex.weight_unit}</span>}
                     {ex.target_rir !== null && <span>RIR {ex.target_rir}</span>}
-                    {ex.rest_seconds && <span>â±{ex.rest_seconds}s</span>}
-                    <button onClick={() => removeExercise(ex.id)} className="text-red-400 hover:text-red-600 ml-2">âœ•</button>
+                    {ex.rest_seconds && <span>{ex.rest_seconds}s rest</span>}
+                    <button onClick={() => removeExercise(ex.id)} className="text-red-400 hover:text-red-600 ml-2">&times;</button>
                   </div>
                 </div>
               ))}
