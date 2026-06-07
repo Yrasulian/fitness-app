@@ -28,6 +28,10 @@ export default function AdminDashboardPage() {
   const [newPlanForm, setNewPlanForm] = useState({ name:'', description:'', template_type:'Custom', duration_weeks:4 });
   const [addExPlanId, setAddExPlanId] = useState<number|null>(null);
   const [newExForm, setNewExForm] = useState({ exercise_name:'', muscle_group:'', target_sets:3, target_reps:'10', target_weight:'', weight_unit:'kg', target_rir:'', rest_seconds:'', notes:'' });
+  const [exSearch, setExSearch] = useState('');
+  const [exMuscleFilter, setExMuscleFilter] = useState('');
+  const [exSearchResults, setExSearchResults] = useState<{name:string;muscle_group:string;equipment:string}[]>([]);
+  const [showExSearch, setShowExSearch] = useState(false);
 
   useEffect(() => {
     if (!user?.is_admin) { navigate('/dashboard'); return; }
@@ -108,6 +112,7 @@ export default function AdminDashboardPage() {
     ));
     setAddExPlanId(null);
     setNewExForm({ exercise_name:'', muscle_group:'', target_sets:3, target_reps:'10', target_weight:'', weight_unit:'kg', target_rir:'', rest_seconds:'', notes:'' });
+    setExSearch(''); setExMuscleFilter(''); setExSearchResults([]); setShowExSearch(false);
   };
 
   const removeExerciseFromPlan = async (planId: number, exId: number) => {
@@ -117,6 +122,15 @@ export default function AdminDashboardPage() {
       : p
     ));
   };
+
+  const searchLibraryExercises = async (q: string, muscle: string) => {
+    const r = await axios.get(`${API}/exercises`, { params: { search: q, muscle } });
+    setExSearchResults(r.data);
+  };
+
+  useEffect(() => {
+    if (showExSearch) searchLibraryExercises(exSearch, exMuscleFilter);
+  }, [exSearch, exMuscleFilter, showExSearch]);
 
   return (
     <div className="container mx-auto p-6">
@@ -332,18 +346,32 @@ export default function AdminDashboardPage() {
                   {/* Add Exercise Form */}
                   {addExPlanId === plan.id && (
                     <form onSubmit={addExerciseToPlan} className="bg-blue-50 border-b p-3 space-y-2">
-                      <input placeholder="Exercise name *" value={newExForm.exercise_name}
-                        onChange={e => setNewExForm({...newExForm, exercise_name:e.target.value})}
-                        className="w-full px-3 py-1.5 border rounded text-sm" required />
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-xs text-gray-500">Muscle</label>
-                          <select value={newExForm.muscle_group} onChange={e => setNewExForm({...newExForm, muscle_group:e.target.value})}
-                            className="w-full px-2 py-1.5 border rounded text-sm">
-                            <option value="">-</option>
-                            {MUSCLES.map(m => <option key={m}>{m}</option>)}
-                          </select>
+                      {/* Exercise Search */}
+                      <div className="flex gap-2">
+                        <input placeholder="Übung suchen..." value={exSearch}
+                          onChange={e => { setExSearch(e.target.value); setNewExForm({...newExForm, exercise_name:e.target.value}); setShowExSearch(true); }}
+                          onFocus={() => { setShowExSearch(true); searchLibraryExercises(exSearch, exMuscleFilter); }}
+                          className="flex-1 px-3 py-1.5 border rounded text-sm" />
+                        <select value={exMuscleFilter} onChange={e => { setExMuscleFilter(e.target.value); setShowExSearch(true); }}
+                          className="px-2 py-1.5 border rounded text-sm">
+                          <option value="">Alle</option>
+                          {MUSCLES.map(m => <option key={m}>{m}</option>)}
+                        </select>
+                      </div>
+                      {showExSearch && exSearchResults.length > 0 && (
+                        <div className="border rounded bg-white max-h-40 overflow-y-auto">
+                          {exSearchResults.slice(0, 20).map((ex, i) => (
+                            <button key={i} type="button"
+                              onClick={() => { setNewExForm({...newExForm, exercise_name:ex.name, muscle_group:ex.muscle_group}); setExSearch(ex.name); setShowExSearch(false); }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-blue-50 border-b last:border-0 flex justify-between text-sm">
+                              <span className="font-medium">{ex.name}</span>
+                              <span className="text-gray-400 text-xs">{ex.muscle_group} &middot; {ex.equipment}</span>
+                            </button>
+                          ))}
                         </div>
+                      )}
+                      {newExForm.muscle_group && <p className="text-xs text-blue-700">Ausgewählt: <strong>{newExForm.exercise_name}</strong> ({newExForm.muscle_group})</p>}
+                      <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="text-xs text-gray-500">Sets</label>
                           <input type="number" min={1} value={newExForm.target_sets}
@@ -357,28 +385,36 @@ export default function AdminDashboardPage() {
                             className="w-full px-2 py-1.5 border rounded text-sm" />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Weight</label>
+                          <label className="text-xs text-gray-500">RIR</label>
+                          <input type="number" min={0} max={5} placeholder="0-5" value={newExForm.target_rir}
+                            onChange={e => setNewExForm({...newExForm, target_rir:e.target.value})}
+                            className="w-full px-2 py-1.5 border rounded text-sm" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Gewicht</label>
                           <input type="number" step="0.5" placeholder="opt." value={newExForm.target_weight}
                             onChange={e => setNewExForm({...newExForm, target_weight:e.target.value})}
                             className="w-full px-2 py-1.5 border rounded text-sm" />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">Unit</label>
+                          <label className="text-xs text-gray-500">Einheit</label>
                           <select value={newExForm.weight_unit} onChange={e => setNewExForm({...newExForm, weight_unit:e.target.value})}
                             className="w-full px-2 py-1.5 border rounded text-sm">
                             <option>kg</option><option>lbs</option>
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500">RIR</label>
-                          <input type="number" min={0} max={5} placeholder="0-5" value={newExForm.target_rir}
-                            onChange={e => setNewExForm({...newExForm, target_rir:e.target.value})}
+                          <label className="text-xs text-gray-500">Pause (s)</label>
+                          <input type="number" placeholder="90" value={newExForm.rest_seconds}
+                            onChange={e => setNewExForm({...newExForm, rest_seconds:e.target.value})}
                             className="w-full px-2 py-1.5 border rounded text-sm" />
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Add</button>
-                        <button type="button" onClick={() => setAddExPlanId(null)} className="bg-gray-200 px-3 py-1 rounded text-sm">Cancel</button>
+                        <button type="submit" disabled={!newExForm.exercise_name}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50">Hinzufügen</button>
+                        <button type="button" onClick={() => { setAddExPlanId(null); setShowExSearch(false); setExSearch(''); setExSearchResults([]); }}
+                          className="bg-gray-200 px-3 py-1 rounded text-sm">Abbrechen</button>
                       </div>
                     </form>
                   )}
