@@ -222,7 +222,7 @@ MIT License - feel free to use for personal projects
 
 ## Author
 
-Your Name
+Yusuf Rasulian
 
 ---
 
