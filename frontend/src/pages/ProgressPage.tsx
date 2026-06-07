@@ -4,7 +4,7 @@ import axios from 'axios';
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 interface ExLog { id: number; exercise_name: string; set_number: number; reps: number; weight: number; weight_unit: string; rir: number | null; }
-interface Workout { id: number; session_name: string; workout_date: string; duration_minutes: number | null; energy_level: number | null; notes: string | null; exerciseLogs: ExLog[]; }
+interface Workout { id: number; session_name: string; workout_date: string; duration_minutes: number | null; energy_level: number | null; notes: string | null; exercise_logs: ExLog[]; }
 
 function groupByExercise(logs: ExLog[]): { name: string; sets: ExLog[] }[] {
   const map: Record<string, ExLog[]> = {};
@@ -57,7 +57,7 @@ export default function ProgressPage() {
             </h2>
             <div className="space-y-2">
               {byDate[date].map(w => {
-                const groups = groupByExercise(w.exerciseLogs || []);
+                const groups = groupByExercise(w.exercise_logs || []);
                 const isOpen = expanded === w.id;
                 return (
                   <div key={w.id} className="bg-white rounded-xl shadow overflow-hidden">
@@ -69,10 +69,10 @@ export default function ProgressPage() {
                         <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
                           {w.duration_minutes && <span>{w.duration_minutes} min</span>}
                           {w.energy_level && <span>Energie: {w.energy_level}/10</span>}
-                          <span>{(w.exerciseLogs || []).length} Sets</span>
+                          <span>{(w.exercise_logs || []).length} Sets</span>
                           <span>{groups.length} &Uuml;bungen</span>
-                          {Number(totalVolume(w.exerciseLogs || [])) > 0 && (
-                            <span>Volumen: {totalVolume(w.exerciseLogs || [])} kg</span>
+                          {Number(totalVolume(w.exercise_logs || [])) > 0 && (
+                            <span>Volumen: {totalVolume(w.exercise_logs || [])} kg</span>
                           )}
                         </div>
                       </div>

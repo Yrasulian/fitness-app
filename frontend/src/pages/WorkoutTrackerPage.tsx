@@ -5,7 +5,7 @@ const API = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 interface Plan { id: number; name: string; }
 interface PlanExercise { id: number; exercise_name: string; muscle_group: string; target_sets: number; target_reps: string; target_weight: number|null; weight_unit: string; target_rir: number|null; notes?: string; }
-interface Workout { id: number; session_name: string; workout_date: string; completed: boolean; duration_minutes: number; energy_level: number; exerciseLogs: ExLog[]; }
+interface Workout { id: number; session_name: string; workout_date: string; completed: boolean; duration_minutes: number; energy_level: number; exercise_logs: ExLog[]; }
 interface ExLog { id: number; exercise_name: string; set_number: number; reps: number; weight: number; weight_unit: string; rir: number; }
 
 export default function WorkoutTrackerPage() {
@@ -137,12 +137,12 @@ export default function WorkoutTrackerPage() {
                   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">+ Log Set</button>
                 </form>
 
-                {activeWorkout.exerciseLogs?.length > 0 && (
+                {activeWorkout.exercise_logs?.length > 0 && (
                   <div className="bg-white rounded-lg shadow p-5">
-                    <h3 className="font-semibold mb-3">Logged Sets ({activeWorkout.exerciseLogs.length})</h3>
+                    <h3 className="font-semibold mb-3">Geloggte S&auml;tze ({activeWorkout.exercise_logs.length})</h3>
                     <table className="w-full text-sm">
-                      <thead><tr className="text-left text-gray-400 border-b"><th className="pb-2">Exercise</th><th>Set</th><th>Reps</th><th>Weight</th><th>RIR</th></tr></thead>
-                      <tbody>{activeWorkout.exerciseLogs.map(l => (
+                      <thead><tr className="text-left text-gray-400 border-b"><th className="pb-2">Übung</th><th>Satz</th><th>Wdh.</th><th>Gewicht</th><th>RIR</th></tr></thead>
+                      <tbody>{activeWorkout.exercise_logs.map(l => (
                         <tr key={l.id} className="border-b last:border-0">
                           <td className="py-2">{l.exercise_name}</td><td>{l.set_number}</td>
                           <td>{l.reps}</td><td>{l.weight} {l.weight_unit}</td><td>{l.rir ?? '-'}</td>
@@ -176,7 +176,7 @@ export default function WorkoutTrackerPage() {
               <div key={w.id} className="bg-white rounded-lg shadow p-5 flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold">{w.session_name}</h3>
-                  <p className="text-sm text-gray-500">{w.workout_date} &middot; {w.exerciseLogs?.length ?? 0} sets</p>
+                  <p className="text-sm text-gray-500">{w.workout_date} &middot; {w.exercise_logs?.length ?? 0} sets</p>
                 </div>
                 <div className="text-sm text-gray-500 text-right">
                   {w.duration_minutes && <p>{w.duration_minutes} min</p>}
